@@ -73,7 +73,7 @@ def send(listData):
     sock.sendto(bytes(listData), (parsedArgs["--ip"], parsedArgs["--port"]))
 
 def parseArguments(args):
-    possibleArguments = {
+    possibleArguments = { # TODO add --help
         "--ip": "str",
         "--port": "int",
         "--mode": "str",
