@@ -2,6 +2,7 @@ import sys
 import socket
 from time import sleep
 from colorsys import hsv_to_rgb
+import math
 
 # config
 DEBUG = False
@@ -12,13 +13,63 @@ DEFAULT_TAIL_LENGTH = 0.8
 DEFAULT_RED = 255
 DEFAULT_GREEN = 255
 DEFAULT_BLUE = 255
-DEFAULT_UDP_IP = "192.168.45.105"
+DEFAULT_UDP_IP = "192.168.254.133"
 DEFAULT_UDP_PORT = 4210
 
 # universal constants
 BYTE_MAX = 255
 SLEEP_PERIOD = 1/60 # for 60fps
 
+
+def waves(rate):
+    redPeriod = 50
+    greenPeriod = 30
+    bluePeriod = 37.5
+
+    redSpeed = 0.004
+    greenSpeed = 0.010
+    blueSpeed = 0.012
+
+    redShift = 0
+    greenShift = 0
+    blueShift = 0
+
+    t = 0
+    while True:
+        tuples = []
+        for i in range(NUM_LEDS):
+            tuples.append((
+                (math.sin((t+i)/redPeriod - redShift)+1)/2,
+                (math.sin((t+i)/greenPeriod - greenShift)+1)/2,
+                (math.sin((t+i)/bluePeriod - blueShift)+1)/2
+            ))
+
+        send([round(BYTE_MAX*c) for tp in tuples for c in tp])
+
+        t += rate
+        redShift += redSpeed
+        greenShift += greenSpeed
+        blueShift += blueSpeed
+        sleep(SLEEP_PERIOD)
+
+def cycleChristmas(rate):
+    t = 0
+    while True:
+        tuples = []
+        for i in range(NUM_LEDS):
+            i += math.floor(t*600)
+
+            if (i//100) % 3 == 0:
+                tuples.append((0, 255, 0)) # green
+            elif (i//100) % 3 == 1:
+                tuples.append((255, 0, 0)) # red
+            else:
+                tuples.append((255, 255, 255)) # yellow
+
+        send([c for tp in tuples for c in tp])
+
+        t += rate
+        sleep(SLEEP_PERIOD)
 
 def cycleHeartbeat(rate):
     raise NotImplementedError()
@@ -117,6 +168,10 @@ if mode == "clear":
     clear()
 if mode == "set":
     set(parsedArgs["--r"], parsedArgs["--g"], parsedArgs["--b"])
+if mode == "christmas":
+    cycleChristmas(parsedArgs["--cycle-rate"])
+if mode == "waves":
+    waves(parsedArgs["--cycle-rate"])
 if mode == "continuous_rainbow":
     cycleRainbow("continuous", parsedArgs["--cycle-rate"])
 if mode == "monotonous_rainbow":
